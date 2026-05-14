@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consulta PJe — TJES</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-deep:#06080f;--bg-base:#0c1120;--bg-card:#111827;--bg-elevated:#1a2235;--bg-input:#0d1424;
+      --border:rgba(56,97,150,.15);--border-focus:rgba(59,130,246,.5);
+      --text-primary:#e8edf5;--text-secondary:#8896b0;--text-muted:#576580;
+      --accent:#3b82f6;--accent-glow:rgba(59,130,246,.15);
+      --success:#22c55e;--error:#ef4444;--warning:#eab308;
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg-deep);color:var(--text-primary);min-height:100vh}
+    body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 30% 20%,rgba(59,130,246,.04) 0%,transparent 50%),radial-gradient(ellipse at 70% 80%,rgba(6,182,212,.03) 0%,transparent 50%);pointer-events:none;z-index:0}
+    .app{position:relative;z-index:1}
+    .header{padding:20px 32px;border-bottom:1px solid var(--border);background:rgba(12,17,32,.85);backdrop-filter:blur(16px);display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+    .header-icon{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#3b82f6,#0ea5e9);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(59,130,246,.2)}
+    .header-text h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
+    .header-text p{font-size:11px;color:var(--text-muted);font-weight:500;letter-spacing:.03em;text-transform:uppercase}
+    .header-nav{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+    .nav-btn{padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font:600 13px 'DM Sans',sans-serif;color:var(--text-muted);background:transparent;transition:all .2s}
+    .nav-btn:hover{color:var(--text-secondary);background:rgba(255,255,255,.03)}
+    .nav-btn.active{color:var(--accent);background:var(--accent-glow)}
+    .main{max-width:1080px;margin:0 auto;padding:28px 24px 60px}
+    .card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+    .card-header{display:flex;align-items:center;gap:10px;margin-bottom:18px}
+    .card-header h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+    .card-header .badge{margin-left:auto;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;background:var(--accent-glow);color:var(--accent)}
+    label{display:block;font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+    input,select,textarea{width:100%;padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg-input);color:var(--text-primary);font:13px 'JetBrains Mono',monospace;outline:none;transition:border-color .2s,box-shadow .2s}
+    input:focus,select:focus,textarea:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--accent-glow)}
+    input::placeholder,textarea::placeholder{color:var(--text-muted);font-family:'DM Sans',sans-serif}
+    select{cursor:pointer;font-family:'DM Sans',sans-serif;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23576580' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+    select option{background:var(--bg-card)}
+    textarea{resize:vertical;min-height:100px;line-height:1.6}
+    .btn{padding:10px 20px;border-radius:9px;border:none;cursor:pointer;font:600 13px 'DM Sans',sans-serif;transition:all .2s;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+    .btn-primary{background:linear-gradient(135deg,#3b82f6,#0ea5e9);color:#fff;box-shadow:0 4px 14px rgba(59,130,246,.25)}
+    .btn-primary:hover{box-shadow:0 6px 20px rgba(59,130,246,.35);transform:translateY(-1px)}
+    .btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-secondary{background:var(--bg-elevated);color:var(--text-secondary);border:1px solid var(--border)}
+    .btn-secondary:hover{background:rgba(255,255,255,.05);color:var(--text-primary)}
+    .btn-sm{padding:6px 12px;font-size:12px}
+    .cred-bar{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:end}
+    @media(max-width:768px){.cred-bar,.grid-2{grid-template-columns:1fr!important}}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    .process-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .tag{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;font:500 12px 'JetBrains Mono',monospace;background:var(--bg-elevated);border:1px solid var(--border);color:var(--text-secondary);animation:fadeIn .2s ease}
+    .tag .remove{cursor:pointer;color:var(--text-muted);font-size:14px;line-height:1;transition:color .15s}
+    .tag .remove:hover{color:var(--error)}
+    @keyframes fadeIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+    .toggle-opt{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);user-select:none}
+    .toggle-switch{width:36px;height:20px;border-radius:10px;background:var(--bg-deep);border:1px solid var(--border);position:relative;transition:all .2s}
+    .toggle-switch.on{background:rgba(59,130,246,.2);border-color:var(--accent)}
+    .toggle-switch::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:var(--text-muted);top:2px;left:2px;transition:all .2s}
+    .toggle-switch.on::after{left:18px;background:var(--accent)}
+    .progress-container{margin-top:20px}
+    .progress-bar-bg{width:100%;height:6px;border-radius:3px;background:var(--bg-deep);overflow:hidden}
+    .progress-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width .3s ease}
+    .progress-text{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-top:6px}
+    .results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:16px}
+    .results-table th{text-align:left;padding:10px 14px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);border-bottom:1px solid var(--border);font-weight:600;position:sticky;top:0;background:var(--bg-card)}
+    .results-table td{padding:12px 14px;font-size:13px;color:var(--text-secondary);border-bottom:1px solid rgba(56,97,150,.07);vertical-align:top}
+    .results-table tr:hover td{background:rgba(255,255,255,.015)}
+    .results-table td:first-child{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-primary)}
+    .status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600}
+    .status-ok{background:rgba(34,197,94,.1);color:var(--success)}
+    .status-err{background:rgba(239,68,68,.1);color:var(--error)}
+    .detail-panel{margin-top:16px;padding:20px;border-radius:12px;background:var(--bg-deep);border:1px solid var(--border);animation:fadeIn .25s ease}
+    .detail-panel h3{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+    .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+    .detail-item{padding:10px 12px;border-radius:8px;background:var(--bg-card)}
+    .detail-item .label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:3px}
+    .detail-item .value{font-size:14px;font-weight:600;color:var(--text-primary)}
+    .stats-bar{display:flex;gap:12px;margin-bottom:20px}
+    .stat-box{flex:1;padding:14px 16px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border);text-align:center}
+    .stat-box .num{font-size:24px;font-weight:800;letter-spacing:-.03em}
+    .stat-box .lbl{font-size:11px;color:var(--text-muted);text-transform:uppercase;margin-top:2px}
+    .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .scroll-y{max-height:420px;overflow-y:auto}
+    .scroll-y::-webkit-scrollbar{width:5px}
+    .scroll-y::-webkit-scrollbar-track{background:transparent}
+    .scroll-y::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    .drop-zone{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--text-muted);font-size:13px}
+    .drop-zone:hover,.drop-zone.over{border-color:var(--accent);background:var(--accent-glow);color:var(--text-secondary)}
+    .mov-list{list-style:none;padding:0}
+    .mov-list li{padding:8px 12px;border-left:2px solid var(--border);margin-left:8px;margin-bottom:4px;font-size:13px;color:var(--text-secondary);transition:border-color .15s}
+    .mov-list li:hover{border-color:var(--accent)}
+    .mov-list .mov-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted);margin-right:8px}
+    .proc-card{padding:16px;border-radius:10px;background:var(--bg-elevated);border:1px solid var(--border);margin-bottom:10px;cursor:pointer;transition:all .2s}
+    .proc-card:hover{border-color:rgba(59,130,246,.3);background:rgba(30,41,59,.8)}
+    .proc-card .proc-num{font:600 13px 'JetBrains Mono',monospace;color:var(--accent);margin-bottom:6px}
+    .proc-card .proc-info{font-size:13px;color:var(--text-secondary);line-height:1.6}
+    .proc-card .proc-assuntos{margin-top:6px;display:flex;flex-wrap:wrap;gap:4px}
+    .assunto-tag{padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(139,92,246,.1);color:#a78bfa;border:1px solid rgba(139,92,246,.2)}
+  </style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const state = {
+  tab: 'consulta',
+  cpf: '', senha: '', instancia: '1grau',
+  processos: [], inputProcesso: '',
+  opcoes: { incluirDocumentos: false, incluirCabecalho: true, movimentos: true },
+  loading: false, progress: { current: 0, total: 0 },
+  resultados: [], detalheAberto: null, showSenha: false,
+  // DataJud
+  dj: {
+    tribunal: 'tjes', assunto: '', classeProcessual: '', orgaoJulgador: '',
+    dataInicio: '', dataFim: '', termo: '',
+    nomeParte: '', numeroProcesso: '', grau: '', valorMin: '', valorMax: '',
+    movimentosDesde: '', multiTribunal: false,
+    tribunaisSelecionados: ['tjes','tjrj','tjsp','trt17','trf2'],
+    loading: false, resultados: [], total: 0, pagina: 0,
+    detalheAberto: null, multiResultados: null,
+  },
+};
+
+function setState(u) { Object.assign(state, u); render(); }
+function setDJ(u) { Object.assign(state.dj, u); render(); }
+
+// ═══ MNI API ═══
+async function consultarLote() {
+  if (!state.cpf || !state.senha) return alert('Preencha CPF e senha.');
+  if (state.processos.length === 0) return alert('Adicione pelo menos um processo.');
+  setState({ loading: true, resultados: [], progress: { current: 0, total: state.processos.length }, detalheAberto: null });
+  const resultados = [];
+  for (let i = 0; i < state.processos.length; i++) {
+    const numero = state.processos[i];
+    state.progress.current = i + 1; render();
+    try {
+      const resp = await fetch('/api/consultar', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operacao: 'consultarProcesso', cpf: state.cpf, senha: state.senha, instancia: state.instancia, numeroProcesso: numero, ...state.opcoes })
+      });
+      const data = await resp.json();
+      if (data.erro) resultados.push({ numero, status: 'erro', erro: data.erro, dados: null, xmlBruto: data.xmlBruto || '', httpStatus: data.httpStatus || '' });
+      else { const dados = data.resultado || data.dados || data; resultados.push({ numero, status: 'ok', dados, erro: null, xmlBruto: data.xmlBruto || '', httpStatus: data.httpStatus || '', nsUsado: data.nsUsado || '' }); }
+    } catch (err) { resultados.push({ numero, status: 'erro', erro: err.message, dados: null, xmlBruto: '', httpStatus: '' }); }
+    state.resultados = [...resultados]; render();
+    if (i < state.processos.length - 1) await new Promise(r => setTimeout(r, 1500));
+  }
+  setState({ loading: false });
+}
+
+// ═══ DATAJUD API ═══
+async function pesquisarDataJud(paginar) {
+  const d = state.dj;
+  if (!d.assunto && !d.classeProcessual && !d.orgaoJulgador && !d.termo && !d.nomeParte && !d.numeroProcesso) return alert('Preencha pelo menos um campo de pesquisa.');
+  if (!paginar) setDJ({ loading: true, resultados: [], total: 0, pagina: 0, detalheAberto: null, multiResultados: null });
+  else setDJ({ loading: true });
+
+  try {
+    const body = { tamanho: 20, pagina: paginar ? d.pagina + 1 : 0 };
+    if (d.assunto) body.assunto = d.assunto;
+    if (d.classeProcessual) body.classeProcessual = d.classeProcessual;
+    if (d.orgaoJulgador) body.orgaoJulgador = d.orgaoJulgador;
+    if (d.termo) body.termo = d.termo;
+    if (d.nomeParte) body.nomeParte = d.nomeParte;
+    if (d.numeroProcesso) body.numeroProcesso = d.numeroProcesso;
+    if (d.grau) body.grau = d.grau;
+    if (d.valorMin) body.valorMin = d.valorMin;
+    if (d.valorMax) body.valorMax = d.valorMax;
+    if (d.dataInicio) body.dataInicio = d.dataInicio;
+    if (d.dataFim) body.dataFim = d.dataFim;
+    if (d.movimentosDesde) body.movimentosDesde = d.movimentosDesde;
+
+    if (d.multiTribunal && d.tribunaisSelecionados.length > 0) {
+      body.tribunais = d.tribunaisSelecionados;
+    } else {
+      body.tribunal = d.tribunal;
+    }
+
+    const resp = await fetch('/api/datajud', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await resp.json();
+    if (data.erro) { setDJ({ loading: false }); return alert(data.erro + (data.detalhes ? '\n\n' + data.detalhes : '')); }
+
+    if (data.operacao === 'multiTribunal') {
+      const todos = data.resultados.flatMap(r => r.processos.map(p => ({...p, _tribunal: r.tribunal})));
+      setDJ({ loading: false, multiResultados: data.resultados, resultados: todos, total: data.totalGeral, pagina: 0 });
+    } else {
+      const novos = paginar ? [...d.resultados, ...data.processos] : data.processos;
+      setDJ({ loading: false, resultados: novos, total: data.total, pagina: data.pagina || (paginar ? d.pagina + 1 : 0), multiResultados: null });
+    }
+    setTimeout(() => { const el = document.getElementById('djResultados'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+  } catch (err) { setDJ({ loading: false }); alert('Erro: ' + err.message); }
+}
+
+// ═══ HELPERS ═══
+function addProcesso(texto) {
+  const nums = texto.split(/[\n,;]+/).map(n => n.trim().replace(/\s/g, '')).filter(n => n.length > 5);
+  const existing = new Set(state.processos);
+  const novos = nums.filter(n => !existing.has(n));
+  if (novos.length > 0) setState({ processos: [...state.processos, ...novos], inputProcesso: '' });
+}
+function removeProcesso(idx) { const p = [...state.processos]; p.splice(idx, 1); setState({ processos: p }); }
+function limparTudo() { setState({ processos: [], resultados: [], detalheAberto: null, progress: { current: 0, total: 0 } }); }
+function handleFileDrop(e) {
+  e.preventDefault(); e.stopPropagation();
+  const file = e.dataTransfer?.files?.[0] || e.target?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => addProcesso(ev.target.result);
+  reader.readAsText(file);
+}
+function exportarCSV() {
+  if (state.resultados.length === 0) return;
+  const sep = ';';
+  const headers = ['Numero','Status','Classe','Orgao Julgador','Data Ajuizamento','Valor Causa','Sigilo','Movimentos','Erro'];
+  const rows = state.resultados.map(r => { const d = r.dados || {};
+    return [r.numero,r.status,d.classe||'',d.orgaoJulgador||'',d.dataAjuizamento||'',d.valorCausa||'',d.sigilo||'',(d.movimentos||[]).length,r.erro||''].map(v => `"${String(v).replace(/"/g,'""')}"`).join(sep);
+  });
+  const blob = new Blob(['\uFEFF'+headers.join(sep)+'\n'+rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `consulta_pje_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+function exportarDataJudCSV() {
+  if (state.dj.resultados.length === 0) return;
+  const sep = ';';
+  const headers = ['Numero','Tribunal','Classe','Assuntos','Orgao Julgador','Data Ajuizamento','Grau','Valor','Partes','Sistema'];
+  const rows = state.dj.resultados.map(p => [p.numero,p.tribunal||p._tribunal||'',p.classe,(p.assuntos||[]).map(a=>a.nome).join(' | '),p.orgaoJulgador,p.dataAjuizamento,p.grau,p.valor||'',(p.partes||[]).map(pt=>pt.nome+'('+pt.polo+')').join(' | '),p.sistema].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(sep));
+  const blob = new Blob(['\uFEFF'+headers.join(sep)+'\n'+rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `datajud_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+// ═══ RENDER ═══
+function render() {
+  document.getElementById('app').innerHTML = `
+    <div class="header">
+      <div class="header-icon">⚖️</div>
+      <div class="header-text"><h1>Consulta PJe — TJES</h1><p>MNI + DataJud CNJ</p></div>
+      <div class="header-nav">
+        ${['consulta','resultados','datajud','ajuda'].map(t => `<button class="nav-btn ${state.tab===t?'active':''}" onclick="setState({tab:'${t}'})">${
+          t==='consulta'?'Consulta MNI':t==='resultados'?'Resultados'+(state.resultados.length?' <span style="margin-left:4px;background:var(--accent-glow);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:11px">'+state.resultados.length+'</span>':''):t==='datajud'?'🔍 Pesquisa por Assunto':'Ajuda'
+        }</button>`).join('')}
+      </div>
+    </div>
+    <div class="main">${renderTab()}</div>`;
+  bindEvents();
+}
+
+function renderTab() {
+  switch(state.tab) {
+    case 'consulta': return renderConsulta();
+    case 'resultados': return renderResultados();
+    case 'datajud': return renderDataJud();
+    case 'ajuda': return renderAjuda();
+  }
+}
+
+// ═══ CONSULTA MNI TAB ═══
+function renderConsulta() {
+  return `
+    <div class="card"><div class="card-header"><span style="font-size:18px">🔐</span><h2>Credenciais</h2><div class="badge">PJe Login</div></div>
+      <div class="cred-bar">
+        <div><label>CPF</label><input type="text" id="cpf" value="${state.cpf}" placeholder="Somente números" /></div>
+        <div><label>Senha</label><div style="position:relative"><input type="${state.showSenha?'text':'password'}" id="senha" value="${state.senha}" placeholder="Sua senha do PJe" /><span onclick="setState({showSenha:!state.showSenha})" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:14px;color:var(--text-muted)">${state.showSenha?'🙈':'👁️'}</span></div></div>
+        <div><label>Instância</label><select id="instancia"><option value="1grau" ${state.instancia==='1grau'?'selected':''}>🏛 1º Grau</option><option value="2grau" ${state.instancia==='2grau'?'selected':''}>🏛 2º Grau</option></select></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-header"><span style="font-size:18px">📋</span><h2>Processos</h2><div class="badge">${state.processos.length} adicionados</div></div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end">
+        <div><label>Número do processo (formato CNJ)</label><input type="text" id="inputProcesso" value="${state.inputProcesso}" placeholder="0000000-00.0000.8.08.0000 (Enter para adicionar)" /></div>
+        <button class="btn btn-primary" onclick="addFromInput()">+ Adicionar</button>
+      </div>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label>Colar vários de uma vez</label><textarea id="bulkInput" placeholder="Cole aqui vários números (um por linha ou separados por vírgula)"></textarea><button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="addFromBulk()">Adicionar todos</button></div>
+        <div><label>Carregar de arquivo .txt</label><div class="drop-zone" id="dropZone" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="handleFileDrop(event);this.classList.remove('over')">📁 Arraste um arquivo .txt aqui<br/><span style="font-size:12px;color:var(--text-muted)">ou clique para selecionar</span><input type="file" id="fileInput" accept=".txt,.csv" style="display:none" /></div></div>
+      </div>
+      ${state.processos.length > 0 ? `<div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:var(--text-muted)">📊 ${state.processos.length} processo(s) na fila</span><button class="btn btn-secondary btn-sm" onclick="limparTudo()">Limpar todos</button></div><div class="process-tags">${state.processos.map((p,i)=>`<span class="tag">${p}<span class="remove" onclick="removeProcesso(${i})">×</span></span>`).join('')}</div>` : ''}
+    </div>
+    <div class="card"><div class="card-header"><span style="font-size:18px">⚙️</span><h2>Opções</h2></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">${['movimentos','incluirCabecalho','incluirDocumentos'].map(k=>`<div class="toggle-opt" onclick="toggleOpcao('${k}')"><div class="toggle-switch ${state.opcoes[k]?'on':''}"></div>${k==='movimentos'?'Movimentações':k==='incluirCabecalho'?'Cabeçalho':'Documentos'}</div>`).join('')}</div>
+    </div>
+    <div style="display:flex;gap:12px;justify-content:center;margin-top:8px"><button class="btn btn-primary" style="padding:14px 40px;font-size:15px" ${state.loading?'disabled':''} onclick="consultarLote()">${state.loading?'<span class="spinner"></span> Consultando...':'🔍 Consultar '+state.processos.length+' Processo(s)'}</button></div>
+    ${state.loading?`<div class="progress-container"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${(state.progress.current/state.progress.total)*100}%"></div></div><div class="progress-text"><span>Processo ${state.progress.current} de ${state.progress.total}</span><span>${Math.round((state.progress.current/state.progress.total)*100)}%</span></div></div>`:''}
+  `;
+}
+
+// ═══ RESULTADOS TAB ═══
+function renderResultados() {
+  if (state.resultados.length === 0) return `<div class="card"><div style="text-align:center;padding:48px 20px;color:var(--text-muted)"><div style="font-size:42px;margin-bottom:12px;opacity:.4">📋</div><p>Nenhum resultado ainda.</p></div></div>`;
+  const ok = state.resultados.filter(r => r.status === 'ok').length;
+  return `
+    <div class="stats-bar"><div class="stat-box"><div class="num" style="color:var(--text-primary)">${state.resultados.length}</div><div class="lbl">Total</div></div><div class="stat-box"><div class="num" style="color:var(--success)">${ok}</div><div class="lbl">Sucesso</div></div><div class="stat-box"><div class="num" style="color:var(--error)">${state.resultados.length-ok}</div><div class="lbl">Erros</div></div></div>
+    <div class="card"><div class="card-header"><span style="font-size:18px">📊</span><h2>Resultados</h2></div>
+      <div class="scroll-y"><table class="results-table"><thead><tr><th>Nº Processo</th><th>Status</th><th>Classe</th><th>Órgão Julgador</th><th>Ações</th></tr></thead><tbody>
+      ${state.resultados.map((r,i)=>{const d=r.dados||{};return `<tr><td>${r.numero}</td><td><span class="status-badge ${r.status==='ok'?'status-ok':'status-err'}">${r.status==='ok'?'✓ OK':'✗ Erro'}</span></td><td>${d.classe||d.mensagem||r.erro||'—'}</td><td>${d.orgaoJulgador||'—'}</td><td><button class="btn btn-secondary btn-sm" onclick="setState({detalheAberto:${i}})">Ver detalhes</button></td></tr>`;}).join('')}
+      </tbody></table></div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end"><button class="btn btn-secondary btn-sm" onclick="exportarCSV()">📥 Exportar CSV</button></div>
+    </div>
+    ${state.detalheAberto!==null?renderDetalhe(state.resultados[state.detalheAberto]):''}
+  `;
+}
+
+function renderDetalhe(r) {
+  if (!r) return '';
+  const d = r.dados || {};
+  const temDados = d.numero||d.classe||d.orgaoJulgador||(d.polos||[]).length>0;
+  return `<div class="detail-panel"><h3>📋 Detalhes — ${r.numero}<button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="setState({detalheAberto:null})">Fechar ✕</button></h3>
+    <div style="margin-bottom:16px;padding:12px;border-radius:8px;background:rgba(234,179,8,.06);border:1px solid rgba(234,179,8,.12);font-size:12px;color:#ca8a04"><strong>🔧 Debug:</strong> HTTP: <strong>${r.httpStatus||'?'}</strong> | NS: <code style="font-size:11px">${r.nsUsado||'?'}</code> | Dados: <strong>${temDados?'SIM ✅':'NÃO ❌'}</strong>${d.mensagem?'<br>Msg: <strong>'+d.mensagem+'</strong>':''}</div>
+    ${temDados?`<div class="detail-grid">${[['Nº Processo',d.numero||r.numero],['Classe',d.classe],['Órgão Julgador',d.orgaoJulgador],['Data Ajuizamento',d.dataAjuizamento],['Valor da Causa',d.valorCausa?'R$ '+Number(d.valorCausa).toLocaleString('pt-BR',{minimumFractionDigits:2}):''],['Sigilo',d.sigilo],['Competência',d.competencia],['Movimentações',(d.movimentos||[]).length]].map(([l,v])=>`<div class="detail-item"><div class="label">${l}</div><div class="value">${v||'—'}</div></div>`).join('')}</div>`:''}
+    ${(d.polos||[]).length>0?`<h3 style="margin-top:20px">👥 Partes</h3>${d.polos.map(p=>`<div style="margin-top:8px"><span style="font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase">${p.tipo||'Polo'}</span>${p.partes.map(pt=>`<div style="padding:6px 12px;margin:3px 0;border-radius:6px;background:var(--bg-card);font-size:13px">${pt.nome||'—'}${pt.documento?' <span style="color:var(--text-muted);font-size:11px">'+pt.documento+'</span>':''}</div>`).join('')}</div>`).join('')}`:''}
+    ${(d.movimentos||[]).length>0?`<h3 style="margin-top:20px">📑 Movimentações</h3><ul class="mov-list scroll-y" style="max-height:260px;margin-top:8px">${d.movimentos.slice(0,20).map(m=>`<li><span class="mov-date">${m.data||''}</span>${m.descricao||'Sem descrição'}</li>`).join('')}</ul>`:''}
+    ${r.xmlBruto?`<h3 style="margin-top:20px">📄 XML bruto</h3><pre class="scroll-y" style="margin-top:8px;padding:14px;border-radius:8px;background:var(--bg-deep);border:1px solid var(--border);font:11px/1.6 'JetBrains Mono',monospace;color:var(--text-muted);white-space:pre-wrap;word-break:break-all;max-height:200px">${r.xmlBruto.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>`:''}
+  </div>`;
+}
+
+// ═══ DATAJUD TAB ═══
+function renderDataJud() {
+  const d = state.dj;
+  const tribunais = [['tjes','TJES'],['tjrj','TJRJ'],['tjsp','TJSP'],['tjmg','TJMG'],['tjba','TJBA'],['tjpr','TJPR'],['tjrs','TJRS'],['tjsc','TJSC'],['tjdf','TJDF'],['tjgo','TJGO'],['tjmt','TJMT'],['tjms','TJMS'],['tjma','TJMA'],['tjce','TJCE'],['tjpe','TJPE'],['tjpa','TJPA'],['tjam','TJAM'],['tjal','TJAL'],['tjpi','TJPI'],['tjpb','TJPB'],['tjrn','TJRN'],['tjse','TJSE'],['tjro','TJRO'],['tjac','TJAC'],['tjap','TJAP'],['tjrr','TJRR'],['tjto','TJTO'],['trt17','TRT17'],['trt1','TRT1'],['trt2','TRT2'],['trf2','TRF2'],['trf1','TRF1'],['stj','STJ'],['tst','TST']];
+  const multiTribunais = [['tjes','TJES'],['tjrj','TJRJ'],['tjsp','TJSP'],['tjmg','TJMG'],['trt17','TRT17'],['trf2','TRF2'],['stj','STJ'],['tst','TST'],['tjba','TJBA'],['tjpr','TJPR']];
+  return `
+    <div class="card" style="border-color:rgba(139,92,246,.2);background:linear-gradient(135deg,rgba(139,92,246,.03),rgba(59,130,246,.03))">
+      <div class="card-header"><span style="font-size:22px">🔍</span><h2>Pesquisa DataJud — CNJ</h2><div class="badge" style="background:rgba(139,92,246,.15);color:#a78bfa">80M+ processos</div></div>
+      <div style="margin-bottom:16px"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px"><label style="margin:0">Tribunal</label><div class="toggle-opt" onclick="setDJ({multiTribunal:!state.dj.multiTribunal})"><div class="toggle-switch ${d.multiTribunal?'on':''}"></div><span style="font-size:12px">Vários tribunais</span></div></div>
+        ${d.multiTribunal?`<div style="display:flex;flex-wrap:wrap;gap:5px">${multiTribunais.map(([k,v])=>`<span class="tag" style="cursor:pointer;${d.tribunaisSelecionados.includes(k)?'background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.3);color:#a78bfa':''}" onclick="toggleTrib('${k}')">${v}${d.tribunaisSelecionados.includes(k)?' ✓':''}</span>`).join('')}</div>`:`<select id="djTribunal">${tribunais.map(([k,v])=>`<option value="${k}" ${d.tribunal===k?'selected':''}>${v}</option>`).join('')}</select>`}
+      </div>
+      <div class="grid-2" style="margin-bottom:12px"><div><label>🏷️ Assunto</label><input type="text" id="djAssunto" value="${d.assunto}" placeholder="Ex: Dano Moral, Alimentos, Despejo" /></div><div><label>👤 Nome da Parte</label><input type="text" id="djNomeParte" value="${d.nomeParte}" placeholder="Ex: João Silva, Empresa Ltda" /></div></div>
+      <div class="grid-3" style="margin-bottom:12px"><div><label>📂 Classe Processual</label><input type="text" id="djClasse" value="${d.classeProcessual}" placeholder="Ex: Procedimento Comum" /></div><div><label>🏛️ Órgão Julgador</label><input type="text" id="djOrgao" value="${d.orgaoJulgador}" placeholder="Ex: 1ª Vara Cível" /></div><div><label>🔢 Nº Processo</label><input type="text" id="djNumero" value="${d.numeroProcesso}" placeholder="0000000-00.0000.0.00.0000" /></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px"><div><label>📅 Data Início</label><input type="date" id="djDataInicio" value="${d.dataInicio}" style="font-family:'DM Sans',sans-serif" /></div><div><label>📅 Data Fim</label><input type="date" id="djDataFim" value="${d.dataFim}" style="font-family:'DM Sans',sans-serif" /></div><div><label>⚖️ Grau</label><select id="djGrau" style="font-family:'DM Sans',sans-serif"><option value="">Todos</option><option value="G1" ${d.grau==='G1'?'selected':''}>1º Grau</option><option value="G2" ${d.grau==='G2'?'selected':''}>2º Grau</option><option value="JE" ${d.grau==='JE'?'selected':''}>Juizado Especial</option></select></div><div><label>🔎 Termo Livre</label><input type="text" id="djTermo" value="${d.termo}" placeholder="Busca geral" /></div></div>
+      <div class="grid-3" style="margin-bottom:16px"><div><label>💰 Valor Mín (R$)</label><input type="number" id="djValorMin" value="${d.valorMin}" placeholder="0" style="font-family:'DM Sans',sans-serif" /></div><div><label>💰 Valor Máx (R$)</label><input type="number" id="djValorMax" value="${d.valorMax}" placeholder="999999" style="font-family:'DM Sans',sans-serif" /></div><div><label>📡 Movimentos desde</label><input type="date" id="djMovDesde" value="${d.movimentosDesde}" style="font-family:'DM Sans',sans-serif" /></div></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;font-size:14px" ${d.loading&&!d.resultados.length?'disabled':''} onclick="pesquisarDataJud(false)">${d.loading&&!d.resultados.length?'<span class="spinner"></span> Pesquisando...':d.multiTribunal?'🔍 Pesquisar em '+d.tribunaisSelecionados.length+' tribunais':'🔍 Pesquisar'}</button>
+    </div>
+    ${d.multiResultados?`<div id="djResultados" class="stats-bar" style="flex-wrap:wrap"><div class="stat-box"><div class="num" style="color:#a78bfa">${d.total.toLocaleString('pt-BR')}</div><div class="lbl">Total geral</div></div>${d.multiResultados.filter(r=>r.total>0).map(r=>`<div class="stat-box"><div class="num" style="color:var(--accent);font-size:18px">${r.total.toLocaleString('pt-BR')}</div><div class="lbl">${r.tribunal}</div></div>`).join('')}</div>`:''}
+    ${d.resultados.length > 0 ? `
+      ${!d.multiResultados?`<div id="djResultados" class="stats-bar"><div class="stat-box"><div class="num" style="color:#a78bfa">${d.total.toLocaleString('pt-BR')}</div><div class="lbl">Encontrados</div></div><div class="stat-box"><div class="num" style="color:var(--text-primary)">${d.resultados.length}</div><div class="lbl">Carregados</div></div><div class="stat-box"><div class="num" style="color:var(--accent)">${d.tribunal.toUpperCase()}</div><div class="lbl">Tribunal</div></div></div>`:''}
+      <div class="card"><div class="card-header"><span style="font-size:18px">📊</span><h2>Processos encontrados</h2><button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="exportarDataJudCSV()">📥 CSV</button></div>
+        <div class="scroll-y" style="max-height:600px">${d.resultados.map((p,i) => `<div class="proc-card" onclick="setDJ({detalheAberto:${d.detalheAberto===i?'null':i}})"><div style="display:flex;justify-content:space-between;align-items:center"><div class="proc-num">${p.numero} ${p._tribunal?'<span style="background:rgba(139,92,246,.15);color:#a78bfa;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-left:6px">'+p._tribunal+'</span>':''}</div>${p.valor?'<span style="font-size:12px;color:var(--success);font-weight:600">R$ '+Number(p.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})+'</span>':''}</div><div class="proc-info"><strong>${p.classe}</strong> · ${p.orgaoJulgador} ${p.grau?'· <span style="color:var(--text-muted)">'+p.grau+'</span>':''}<br/><span style="font-size:12px;color:var(--text-muted)">${p.dataAjuizamento?'Ajuizado em '+new Date(p.dataAjuizamento).toLocaleDateString('pt-BR'):''}</span></div><div class="proc-assuntos">${(p.assuntos||[]).map(a=>`<span class="assunto-tag">${a.nome||a.codigo}</span>`).join('')}</div>${d.detalheAberto===i?renderDataJudDetalhe(p):''}</div>`).join('')}</div>
+        ${!d.multiResultados&&d.resultados.length<d.total?`<div style="text-align:center;margin-top:16px"><button class="btn btn-secondary" ${d.loading?'disabled':''} onclick="pesquisarDataJud(true)">${d.loading?'<span class="spinner"></span>':'Carregar mais ('+( d.total-d.resultados.length)+' restantes)'}</button></div>`:''}
+      </div>` : d.loading ? '' : ''}`;
+}
+
+function renderDataJudDetalhe(p) {
+  return `
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)" onclick="event.stopPropagation()">
+      <div class="detail-grid" style="margin-bottom:12px">
+        ${[['Número',p.numero],['Classe',p.classe],['Órgão',p.orgaoJulgador],['Ajuizamento',p.dataAjuizamento?new Date(p.dataAjuizamento).toLocaleDateString('pt-BR'):''],['Última Atualização',p.dataUltimaAtualizacao?new Date(p.dataUltimaAtualizacao).toLocaleDateString('pt-BR'):''],['Grau',p.grau||''],['Valor',p.valor?'R$ '+Number(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''],['Tribunal',p.tribunal||p._tribunal||''],['Formato',p.formato],['Sistema',p.sistema]].map(([l,v])=>`<div class="detail-item"><div class="label">${l}</div><div class="value">${v||'—'}</div></div>`).join('')}
+      </div>
+      ${(p.partes||[]).length>0?`<h3 style="font-size:13px;margin-bottom:8px">👥 Partes</h3><div style="display:grid;gap:4px;margin-bottom:12px">${p.partes.map(pt=>`<div style="padding:6px 12px;border-radius:6px;background:var(--bg-card);font-size:13px;display:flex;justify-content:space-between"><span>${pt.nome||'—'}</span><span style="font-size:11px;color:var(--text-muted)">${pt.polo||pt.tipo||''}</span></div>`).join('')}</div>`:''}
+      ${(p.movimentos||[]).length>0?`<h3 style="font-size:13px;margin-bottom:8px">📑 Últimas movimentações</h3><ul class="mov-list">${p.movimentos.map(m=>`<li><span class="mov-date">${m.dataHora?new Date(m.dataHora).toLocaleDateString('pt-BR'):''}</span><strong>${m.nome}</strong>${m.complementos.length?' — '+m.complementos.join(', '):''}</li>`).join('')}</ul>`:''}
+    </div>
+  `;
+}
+
+// ═══ AJUDA TAB ═══
+function renderAjuda() {
+  return `
+    <div class="card"><div class="card-header"><span style="font-size:18px">📖</span><h2>Como usar</h2></div>
+      <div style="line-height:1.9;font-size:14px;color:var(--text-secondary)">
+        <p><strong style="color:var(--accent)">Consulta MNI</strong> — Busca detalhada por número do processo usando suas credenciais PJe. Inclui partes, movimentações e documentos.</p>
+        <p style="margin-top:10px"><strong style="color:#a78bfa">Pesquisa por Assunto</strong> — Busca na base nacional DataJud (CNJ) por assunto, classe, órgão julgador ou termo livre. Não precisa de login. Funciona para qualquer tribunal do Brasil.</p>
+      </div>
+    </div>
+    <div class="card" style="border-color:rgba(239,68,68,.15)"><div class="card-header"><span style="font-size:18px">⚠️</span><h2>Observações</h2></div>
+      <ul style="line-height:2;font-size:13px;color:var(--text-secondary);padding-left:18px">
+        <li><strong>MNI:</strong> Use suas credenciais do PJe (CPF + senha)</li>
+        <li><strong>MNI:</strong> Funciona apenas para 1º Grau do TJES</li>
+        <li><strong>DataJud:</strong> Gratuito, sem login, cobre todos os tribunais</li>
+        <li><strong>DataJud:</strong> Dados podem ter defasagem de algumas horas/dias</li>
+        <li>Suas credenciais <strong style="color:var(--text-primary)">não são armazenadas</strong></li>
+      </ul>
+    </div>
+  `;
+}
+
+// ═══ EVENTS ═══
+function bindEvents() {
+  const el = (id) => document.getElementById(id);
+  if (el('cpf')) el('cpf').addEventListener('input', e => { state.cpf = e.target.value; });
+  if (el('senha')) el('senha').addEventListener('input', e => { state.senha = e.target.value; });
+  if (el('instancia')) el('instancia').addEventListener('change', e => { state.instancia = e.target.value; });
+  if (el('inputProcesso')) { el('inputProcesso').addEventListener('input', e => { state.inputProcesso = e.target.value; }); el('inputProcesso').addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); addFromInput(); } }); }
+  if (el('dropZone') && el('fileInput')) { el('dropZone').addEventListener('click', () => el('fileInput').click()); el('fileInput').addEventListener('change', handleFileDrop); }
+  // DataJud fields
+  if (el('djTribunal')) el('djTribunal').addEventListener('change', e => { state.dj.tribunal = e.target.value; });
+  if (el('djAssunto')) el('djAssunto').addEventListener('input', e => { state.dj.assunto = e.target.value; });
+  if (el('djClasse')) el('djClasse').addEventListener('input', e => { state.dj.classeProcessual = e.target.value; });
+  if (el('djOrgao')) el('djOrgao').addEventListener('input', e => { state.dj.orgaoJulgador = e.target.value; });
+  if (el('djTermo')) el('djTermo').addEventListener('input', e => { state.dj.termo = e.target.value; });
+  if (el('djDataInicio')) el('djDataInicio').addEventListener('input', e => { state.dj.dataInicio = e.target.value; });
+  if (el('djDataFim')) el('djDataFim').addEventListener('input', e => { state.dj.dataFim = e.target.value; });
+  if (el('djNomeParte')) el('djNomeParte').addEventListener('input', e => { state.dj.nomeParte = e.target.value; });
+  if (el('djNumero')) el('djNumero').addEventListener('input', e => { state.dj.numeroProcesso = e.target.value; });
+  if (el('djGrau')) el('djGrau').addEventListener('change', e => { state.dj.grau = e.target.value; });
+  if (el('djValorMin')) el('djValorMin').addEventListener('input', e => { state.dj.valorMin = e.target.value; });
+  if (el('djValorMax')) el('djValorMax').addEventListener('input', e => { state.dj.valorMax = e.target.value; });
+  if (el('djMovDesde')) el('djMovDesde').addEventListener('input', e => { state.dj.movimentosDesde = e.target.value; });
+}
+function addFromInput() { if (state.inputProcesso.trim()) addProcesso(state.inputProcesso); }
+function addFromBulk() { const el = document.getElementById('bulkInput'); if (el && el.value.trim()) { addProcesso(el.value); el.value = ''; } }
+function toggleOpcao(key) { state.opcoes[key] = !state.opcoes[key]; render(); }
+function toggleTrib(t) {
+  const s = state.dj.tribunaisSelecionados;
+  const idx = s.indexOf(t);
+  if (idx > -1) { s.splice(idx, 1); } else { if (s.length < 10) s.push(t); }
+  setDJ({ tribunaisSelecionados: [...s] });
+}
+
+render();
+</script>
+</body>
+</html>
