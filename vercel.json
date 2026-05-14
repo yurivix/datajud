@@ -2,9 +2,6 @@
   "version": 2,
   "regions": ["gru1"],
   "functions": {
-    "api/consultar.js": {
-      "maxDuration": 60
-    },
     "api/datajud.js": {
       "maxDuration": 30
     }
