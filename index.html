@@ -127,20 +127,28 @@ function setState(u) { Object.assign(state, u); render(); }
 function setDJ(u) { Object.assign(state.dj, u); render(); }
 
 function formatarData(val) {
-  if (!val) return '';
-  // Try parsing as-is
-  let d = new Date(val);
-  // If invalid, try common formats
-  if (isNaN(d.getTime())) {
-    // "20240115" -> "2024-01-15"
-    if (/^\d{8}$/.test(val)) d = new Date(val.slice(0,4)+'-'+val.slice(4,6)+'-'+val.slice(6,8));
-    // "15/01/2024" -> parse BR format
-    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) { const p=val.split('/'); d=new Date(p[2]+'-'+p[1]+'-'+p[0]); }
-    // epoch number
-    else if (/^\d{10,13}$/.test(val)) d = new Date(Number(val.length>10?val:val*1000));
+  if (val === null || val === undefined || val === '') return '';
+  // If number (epoch ms or seconds)
+  if (typeof val === 'number') {
+    const d = new Date(val > 9999999999 ? val : val * 1000);
+    return isNaN(d.getTime()) ? String(val) : d.toLocaleDateString('pt-BR');
   }
-  if (isNaN(d.getTime())) return val; // return raw if still invalid
-  return d.toLocaleDateString('pt-BR');
+  val = String(val).trim();
+  if (!val) return '';
+  // Try ISO format directly
+  let d = new Date(val);
+  if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR');
+  // "20240115" compact format
+  if (/^\d{8}$/.test(val)) { d = new Date(val.slice(0,4)+'-'+val.slice(4,6)+'-'+val.slice(6,8)); if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR'); }
+  // "15/01/2024" BR format
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(val)) { const p=val.split('/'); d=new Date(p[2].slice(0,4)+'-'+p[1]+'-'+p[0]); if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR'); }
+  // epoch as string
+  if (/^\d{10,13}$/.test(val)) { d = new Date(Number(val.length>10?val:val+'000')); if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR'); }
+  // Extract date from any string containing YYYY-MM-DD
+  const m = val.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) { d = new Date(m[1]+'-'+m[2]+'-'+m[3]); if (!isNaN(d.getTime())) return d.toLocaleDateString('pt-BR'); }
+  // Give up, return first 10 chars
+  return val.slice(0, 10);
 }
 
 // ═══ MNI API ═══
