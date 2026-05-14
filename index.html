@@ -126,6 +126,23 @@ const state = {
 function setState(u) { Object.assign(state, u); render(); }
 function setDJ(u) { Object.assign(state.dj, u); render(); }
 
+function formatarData(val) {
+  if (!val) return '';
+  // Try parsing as-is
+  let d = new Date(val);
+  // If invalid, try common formats
+  if (isNaN(d.getTime())) {
+    // "20240115" -> "2024-01-15"
+    if (/^\d{8}$/.test(val)) d = new Date(val.slice(0,4)+'-'+val.slice(4,6)+'-'+val.slice(6,8));
+    // "15/01/2024" -> parse BR format
+    else if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) { const p=val.split('/'); d=new Date(p[2]+'-'+p[1]+'-'+p[0]); }
+    // epoch number
+    else if (/^\d{10,13}$/.test(val)) d = new Date(Number(val.length>10?val:val*1000));
+  }
+  if (isNaN(d.getTime())) return val; // return raw if still invalid
+  return d.toLocaleDateString('pt-BR');
+}
+
 // ═══ MNI API ═══
 async function consultarLote() {
   if (!state.cpf || !state.senha) return alert('Preencha CPF e senha.');
@@ -334,7 +351,7 @@ function renderDataJud() {
     ${d.resultados.length > 0 ? `
       ${!d.multiResultados?`<div id="djResultados" class="stats-bar"><div class="stat-box"><div class="num" style="color:#a78bfa">${d.total.toLocaleString('pt-BR')}</div><div class="lbl">Encontrados</div></div><div class="stat-box"><div class="num" style="color:var(--text-primary)">${d.resultados.length}</div><div class="lbl">Carregados</div></div><div class="stat-box"><div class="num" style="color:var(--accent)">${d.tribunal.toUpperCase()}</div><div class="lbl">Tribunal</div></div></div>`:''}
       <div class="card"><div class="card-header"><span style="font-size:18px">📊</span><h2>Processos encontrados</h2><button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="exportarDataJudCSV()">📥 CSV</button></div>
-        <div class="scroll-y" style="max-height:600px">${d.resultados.map((p,i) => `<div class="proc-card" onclick="setDJ({detalheAberto:${d.detalheAberto===i?'null':i}})"><div style="display:flex;justify-content:space-between;align-items:center"><div class="proc-num">${p.numero} ${p._tribunal?'<span style="background:rgba(139,92,246,.15);color:#a78bfa;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-left:6px">'+p._tribunal+'</span>':''}</div>${p.valor?'<span style="font-size:12px;color:var(--success);font-weight:600">R$ '+Number(p.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})+'</span>':''}</div><div class="proc-info"><strong>${p.classe}</strong> · ${p.orgaoJulgador} ${p.grau?'· <span style="color:var(--text-muted)">'+p.grau+'</span>':''}<br/><span style="font-size:12px;color:var(--text-muted)">${p.dataAjuizamento?'Ajuizado em '+new Date(p.dataAjuizamento).toLocaleDateString('pt-BR'):''}</span></div><div class="proc-assuntos">${(p.assuntos||[]).map(a=>`<span class="assunto-tag">${a.nome||a.codigo}</span>`).join('')}</div>${d.detalheAberto===i?renderDataJudDetalhe(p):''}</div>`).join('')}</div>
+        <div class="scroll-y" style="max-height:600px">${d.resultados.map((p,i) => `<div class="proc-card" onclick="setDJ({detalheAberto:${d.detalheAberto===i?'null':i}})"><div style="display:flex;justify-content:space-between;align-items:center"><div class="proc-num">${p.numero} ${p._tribunal?'<span style="background:rgba(139,92,246,.15);color:#a78bfa;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:700;margin-left:6px">'+p._tribunal+'</span>':''}</div>${p.valor?'<span style="font-size:12px;color:var(--success);font-weight:600">R$ '+Number(p.valor).toLocaleString("pt-BR",{minimumFractionDigits:2})+'</span>':''}</div><div class="proc-info"><strong>${p.classe}</strong> · ${p.orgaoJulgador} ${p.grau?'· <span style="color:var(--text-muted)">'+p.grau+'</span>':''}<br/><span style="font-size:12px;color:var(--text-muted)">${p.dataAjuizamento?'Ajuizado em '+formatarData(p.dataAjuizamento):''}</span></div><div class="proc-assuntos">${(p.assuntos||[]).map(a=>`<span class="assunto-tag">${a.nome||a.codigo}</span>`).join('')}</div>${d.detalheAberto===i?renderDataJudDetalhe(p):''}</div>`).join('')}</div>
         ${!d.multiResultados&&d.resultados.length<d.total?`<div style="text-align:center;margin-top:16px"><button class="btn btn-secondary" ${d.loading?'disabled':''} onclick="pesquisarDataJud(true)">${d.loading?'<span class="spinner"></span>':'Carregar mais ('+( d.total-d.resultados.length)+' restantes)'}</button></div>`:''}
       </div>` : d.loading ? '' : ''}`;
 }
@@ -343,10 +360,10 @@ function renderDataJudDetalhe(p) {
   return `
     <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)" onclick="event.stopPropagation()">
       <div class="detail-grid" style="margin-bottom:12px">
-        ${[['Número',p.numero],['Classe',p.classe],['Órgão',p.orgaoJulgador],['Ajuizamento',p.dataAjuizamento?new Date(p.dataAjuizamento).toLocaleDateString('pt-BR'):''],['Última Atualização',p.dataUltimaAtualizacao?new Date(p.dataUltimaAtualizacao).toLocaleDateString('pt-BR'):''],['Grau',p.grau||''],['Valor',p.valor?'R$ '+Number(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''],['Tribunal',p.tribunal||p._tribunal||''],['Formato',p.formato],['Sistema',p.sistema]].map(([l,v])=>`<div class="detail-item"><div class="label">${l}</div><div class="value">${v||'—'}</div></div>`).join('')}
+        ${[['Número',p.numero],['Classe',p.classe],['Órgão',p.orgaoJulgador],['Ajuizamento',p.dataAjuizamento?formatarData(p.dataAjuizamento):''],['Última Atualização',p.dataUltimaAtualizacao?formatarData(p.dataUltimaAtualizacao):''],['Grau',p.grau||''],['Valor',p.valor?'R$ '+Number(p.valor).toLocaleString('pt-BR',{minimumFractionDigits:2}):''],['Tribunal',p.tribunal||p._tribunal||''],['Formato',p.formato],['Sistema',p.sistema]].map(([l,v])=>`<div class="detail-item"><div class="label">${l}</div><div class="value">${v||'—'}</div></div>`).join('')}
       </div>
       ${(p.partes||[]).length>0?`<h3 style="font-size:13px;margin-bottom:8px">👥 Partes</h3><div style="display:grid;gap:4px;margin-bottom:12px">${p.partes.map(pt=>`<div style="padding:6px 12px;border-radius:6px;background:var(--bg-card);font-size:13px;display:flex;justify-content:space-between"><span>${pt.nome||'—'}</span><span style="font-size:11px;color:var(--text-muted)">${pt.polo||pt.tipo||''}</span></div>`).join('')}</div>`:''}
-      ${(p.movimentos||[]).length>0?`<h3 style="font-size:13px;margin-bottom:8px">📑 Últimas movimentações</h3><ul class="mov-list">${p.movimentos.map(m=>`<li><span class="mov-date">${m.dataHora?new Date(m.dataHora).toLocaleDateString('pt-BR'):''}</span><strong>${m.nome}</strong>${m.complementos.length?' — '+m.complementos.join(', '):''}</li>`).join('')}</ul>`:''}
+      ${(p.movimentos||[]).length>0?`<h3 style="font-size:13px;margin-bottom:8px">📑 Últimas movimentações</h3><ul class="mov-list">${p.movimentos.map(m=>`<li><span class="mov-date">${m.dataHora?formatarData(m.dataHora):''}</span><strong>${m.nome}</strong>${m.complementos.length?' — '+m.complementos.join(', '):''}</li>`).join('')}</ul>`:''}
     </div>
   `;
 }
